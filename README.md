@@ -1,4 +1,4 @@
-# WAA Studio v1 Scaffold (No Volta) - v18
+# WAA Studio
 
 ## Quickstart
 ```bash
