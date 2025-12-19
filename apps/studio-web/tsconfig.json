@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "jsx": "preserve" },
+  "compilerOptions": { "jsx": "preserve", "preserveSymlinks": true },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }

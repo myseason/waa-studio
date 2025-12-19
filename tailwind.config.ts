@@ -1,12 +1,10 @@
-import type { Config } from "tailwindcss";
-
 /**
  * WAA Studio Tailwind Config (Board_6 baseline)
  * - Uses CSS variables from styles/tokens.css
  * - Dark mode via html.dark or [data-theme="dark"]
  */
-const config: Config = {
-  darkMode: ["class", '[data-theme="dark"]'],
+const config = {
+  darkMode: ["variant", ["html.dark &", '[data-theme="dark"] &']] as ["variant", string[]],
   content: [
     "./apps/**/*.{ts,tsx,js,jsx,mdx}",
     "./packages/**/*.{ts,tsx,js,jsx,mdx}",
