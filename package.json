@@ -25,6 +25,7 @@
     "verify": "node ./scripts/verify.mjs"
   },
   "devDependencies": {
+    "@types/node": "24.3.1",
     "turbo": "2.6.3",
     "typescript": "5.9.3"
   },

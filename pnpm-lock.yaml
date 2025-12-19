@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/node':
+        specifier: 24.3.1
+        version: 24.3.1
       turbo:
         specifier: 2.6.3
         version: 2.6.3
@@ -140,12 +143,18 @@ importers:
   packages/schemas: {}
 
   packages/ui:
-    dependencies:
+    devDependencies:
+      '@types/react':
+        specifier: 19.1.12
+        version: 19.1.12
+      '@types/react-dom':
+        specifier: 19.1.9
+        version: 19.1.9(@types/react@19.1.12)
       react:
-        specifier: ^19.0.0
+        specifier: 19.2.3
         version: 19.2.3
       react-dom:
-        specifier: ^19.0.0
+        specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
 
 packages:
