@@ -25,7 +25,9 @@
     "verify": "node ./scripts/verify.mjs"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "4.1.18",
     "@types/node": "24.3.1",
+    "tailwindcss": "4.1.18",
     "turbo": "2.6.3",
     "typescript": "5.9.3"
   },

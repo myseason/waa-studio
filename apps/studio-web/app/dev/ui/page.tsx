@@ -38,6 +38,7 @@ function DialogDemo() {
   }, [open]);
 
   return (
+    
     <Card>
       <CardHeader>
         <CardTitle>Dialog</CardTitle>
@@ -48,6 +49,7 @@ function DialogDemo() {
           Open dialog
         </Button>
         <span className="text-sm text-muted">상태: {open ? "open" : "closed"}</span>
+        <div className="mt-4 h-8 w-40 rounded-sm bg-primary" />
       </CardContent>
 
       {open ? (

@@ -4,12 +4,8 @@
 */
 @import "./tokens.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
-  :root {
+  :root {치
     color-scheme: light;
   }
   html.dark, [data-theme="dark"] {
