@@ -1,0 +1,5 @@
+FROM node:24.12.0-bookworm
+RUN npm i -g pnpm@10.24.0 && pnpm config set store-dir /pnpm_store
+WORKDIR /repo
+ENV PNPM_STORE_DIR=/pnpm_store
+RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certificates && rm -rf /var/lib/apt/lists/*

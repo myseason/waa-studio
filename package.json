@@ -1,0 +1,35 @@
+{
+  "name": "waa-studio",
+  "private": true,
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=24.0.0 <25.0.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "gen:api-client": "pnpm -C packages/api-client gen",
+    "dev:infra": "docker compose -f docker-compose.infra.yml up -d",
+    "dev:reset": "docker compose -f docker-compose.infra.yml down -v",
+    "setup": "pnpm env:sync && pnpm install:ws && pnpm check:ignored-builds && node ./scripts/ensure-prisma-client.mjs && pnpm --filter @waa/api db:validate && pnpm --filter @waa/api db:migrate && pnpm verify",
+    "clean": "node ./scripts/clean.mjs",
+    "env:sync": "node ./scripts/env-sync.mjs",
+    "predev": "node ./scripts/ensure-ready.mjs",
+    "check:ignored-builds": "node ./scripts/check-ignored-builds.mjs",
+    "install:ws": "pnpm install --config.node-linker=isolated --ignore-scripts=false",
+    "setup:after-approve": "pnpm install:ws --force && pnpm -w rebuild && pnpm setup",
+    "doctor": "node ./scripts/doctor.mjs",
+    "verify": "node ./scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "turbo": "2.6.3",
+    "typescript": "5.9.3"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

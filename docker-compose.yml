@@ -1,0 +1,140 @@
+services:
+  postgres:
+    image: postgres:18.1
+    environment:
+      POSTGRES_USER: waa
+      POSTGRES_PASSWORD: waa
+      POSTGRES_DB: waa
+    ports: ["5432:5432"]
+    volumes: ["pg_data:/var/lib/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U waa -d waa"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  valkey:
+    image: valkey/valkey:9.0.1-alpine3.23
+    ports: ["6379:6379"]
+    volumes: ["valkey_data:/data"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "PING"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    # NOTE: The official MinIO Docker Hub images currently lag behind the latest upstream
+    # security release (RELEASE.2025-10-15...). For local dev we pin to the latest
+    # available multi-arch (amd64/arm64) tag on Docker Hub.
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      # Optional but helps local redirects in the console.
+      MINIO_SERVER_URL: http://localhost:9000
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["minio_data:/data"]
+    # Intentionally omit a container-level healthcheck to avoid relying on curl/wget
+    # availability inside the image. Readiness is handled by minio_init via mc retry.
+
+  minio_init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z-cpuv1
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -lc "
+      echo 'waiting for minio...' &&
+      until mc alias set waa http://minio:9000 minioadmin minioadmin123; do
+        sleep 1;
+      done &&
+      mc mb -p waa/waa-assets || true &&
+      mc mb -p waa/waa-exports || true &&
+      mc mb -p waa/waa-logs || true &&
+      echo 'minio buckets ready' "
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    env_file: [".env"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://waa:waa@postgres:5432/waa?schema=public
+      VALKEY_URL: redis://valkey:6379
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin123
+      S3_BUCKET_ASSETS: waa-assets
+      S3_BUCKET_EXPORTS: waa-exports
+      S3_BUCKET_LOGS: waa-logs
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      valkey: { condition: service_healthy }
+      minio: { condition: service_started }
+      minio_init: { condition: service_completed_successfully }
+    volumes:
+      - ./:/repo
+      - root_node_modules:/repo/node_modules
+      - api_node_modules:/repo/apps/api/node_modules
+      - pnpm_store:/pnpm_store
+    working_dir: /repo
+    command: ["bash", "-lc", "pnpm -C apps/api install && pnpm -C apps/api prisma:generate && pnpm -C apps/api start:dev"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile.dev
+    env_file: [".env"]
+    environment:
+      NODE_ENV: development
+      VALKEY_URL: redis://valkey:6379
+      DATABASE_URL: postgresql://waa:waa@postgres:5432/waa?schema=public
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin123
+      S3_BUCKET_EXPORTS: waa-exports
+      S3_BUCKET_LOGS: waa-logs
+    depends_on:
+      api: { condition: service_started }
+    volumes:
+      - ./:/repo
+      - root_node_modules:/repo/node_modules
+      - worker_node_modules:/repo/apps/worker/node_modules
+      - pnpm_store:/pnpm_store
+    working_dir: /repo
+    command: ["bash", "-lc", "pnpm -C apps/worker install && pnpm -C apps/worker dev"]
+
+  studio-web:
+    build:
+      context: .
+      dockerfile: apps/studio-web/Dockerfile.dev
+    env_file: [".env"]
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    ports: ["3000:3000"]
+    depends_on:
+      api: { condition: service_started }
+    volumes:
+      - ./:/repo
+      - root_node_modules:/repo/node_modules
+      - web_node_modules:/repo/apps/studio-web/node_modules
+      - pnpm_store:/pnpm_store
+    working_dir: /repo
+    command: ["bash", "-lc", "pnpm -C apps/studio-web install && pnpm -C apps/studio-web dev --hostname 0.0.0.0 --port 3000"]
+
+volumes:
+  pg_data:
+  valkey_data:
+  minio_data:
+  pnpm_store:
+  root_node_modules:
+  api_node_modules:
+  worker_node_modules:
+  web_node_modules:

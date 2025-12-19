@@ -1,0 +1,244 @@
+openapi: 3.1.0
+info:
+  title: WAA Studio API
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000
+tags:
+  - name: Health
+  - name: Workspaces
+  - name: Projects
+  - name: Assets
+  - name: Exports
+  - name: AI
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error, requestId]
+      properties:
+        requestId: { type: string }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object, additionalProperties: true }
+
+    Workspace:
+      type: object
+      required: [id, name, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Project:
+      type: object
+      required: [id, workspaceId, name, domain, catalogPin, snapshot, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        workspaceId: { type: string }
+        name: { type: string }
+        domain: { type: string }
+        catalogPin: { type: object, additionalProperties: true }
+        snapshot: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateProjectRequest:
+      type: object
+      required: [name, domain, workspaceId]
+      properties:
+        workspaceId: { type: string }
+        name: { type: string }
+        domain: { type: string }
+        templateId: { type: string, nullable: true }
+
+    ExportJob:
+      type: object
+      required: [id, projectId, status, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        status: { type: string, enum: [queued, running, succeeded, failed, canceled] }
+        idempotencyKey: { type: string, nullable: true }
+        artifactUrl: { type: string, nullable: true }
+        logsUrl: { type: string, nullable: true }
+        errorCode: { type: string, nullable: true }
+        errorMessage: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateExportJobRequest:
+      type: object
+      required: [projectId]
+      properties:
+        projectId: { type: string }
+        idempotencyKey: { type: string, nullable: true }
+
+    AiAssistRequest:
+      type: object
+      required: [scope, intent, prompt, context]
+      properties:
+        scope: { type: string, enum: [pageStudio, flowOverlay, validation, dataApiStudio] }
+        intent: { type: string, enum: [proposeCommands, explain, proposeFix] }
+        prompt: { type: string }
+        context: { type: object, additionalProperties: true }
+
+    AiAssistResponse:
+      type: object
+      required: [requestId, mode]
+      properties:
+        requestId: { type: string }
+        mode: { type: string, enum: [commands, explain] }
+        explanation: { type: string, nullable: true }
+        proposals: { type: array, items: { type: object, additionalProperties: true } }
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, time]
+                properties:
+                  ok: { type: boolean }
+                  time: { type: string, format: date-time }
+
+  /workspaces:
+    get:
+      tags: [Workspaces]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Workspace" } }
+
+    post:
+      tags: [Workspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Workspace" }
+
+  /projects:
+    get:
+      tags: [Projects]
+      parameters:
+        - in: query
+          name: workspaceId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Project" } }
+
+    post:
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+
+  /projects/{projectId}:
+    get:
+      tags: [Projects]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+
+  /exports:
+    post:
+      tags: [Exports]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateExportJobRequest" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+
+  /exports/{exportJobId}:
+    get:
+      tags: [Exports]
+      parameters:
+        - in: path
+          name: exportJobId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+
+  /ai/assist:
+    post:
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AiAssistRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiAssistResponse" }

@@ -1,0 +1,14 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm v10 blocks lifecycle/build scripts (preinstall/install/postinstall) unless approved.
+# To make the scaffold "works out of the box", we keep an explicit allow-list here.
+# You can adjust this list anytime.
+onlyBuiltDependencies:
+  - "@nestjs/core"
+  - "@prisma/engines"
+  - esbuild
+  - msgpackr-extract
+  - prisma
+  - sharp

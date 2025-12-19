@@ -1,0 +1,30 @@
+{
+  "name": "@waa/studio-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "@waa/ui": "workspace:*",
+    "next": "16.0.10",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zustand": "5.0.9"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "24.3.1",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "tailwindcss": "4.0.0",
+    "postcss": "8.5.6",
+    "autoprefixer": "10.4.21",
+    "@tailwindcss/postcss": "4.0.0",
+    "next": "16.0.10",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  }
+}

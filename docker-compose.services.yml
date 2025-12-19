@@ -1,0 +1,81 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    env_file: [".env"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://waa:waa@postgres:5432/waa?schema=public
+      VALKEY_URL: redis://valkey:6379
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin123
+      S3_BUCKET_ASSETS: waa-assets
+      S3_BUCKET_EXPORTS: waa-exports
+      S3_BUCKET_LOGS: waa-logs
+      API_PORT: "4000"
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      valkey: { condition: service_healthy }
+      minio: { condition: service_started }
+      minio_init: { condition: service_completed_successfully }
+    volumes:
+      - ./:/repo
+      - root_node_modules:/repo/node_modules
+      - api_node_modules:/repo/apps/api/node_modules
+      - pnpm_store:/pnpm_store
+    working_dir: /repo
+    command: ["bash", "-lc", "pnpm -C apps/api install && pnpm -C apps/api prisma:generate && pnpm -C apps/api dev"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile.dev
+    env_file: [".env"]
+    environment:
+      NODE_ENV: development
+      VALKEY_URL: redis://valkey:6379
+      DATABASE_URL: postgresql://waa:waa@postgres:5432/waa?schema=public
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin123
+      S3_BUCKET_EXPORTS: waa-exports
+      S3_BUCKET_LOGS: waa-logs
+    depends_on:
+      api: { condition: service_started }
+    volumes:
+      - ./:/repo
+      - root_node_modules:/repo/node_modules
+      - worker_node_modules:/repo/apps/worker/node_modules
+      - pnpm_store:/pnpm_store
+    working_dir: /repo
+    command: ["bash", "-lc", "pnpm -C apps/worker install && pnpm -C apps/worker dev"]
+
+  studio-web:
+    build:
+      context: .
+      dockerfile: apps/studio-web/Dockerfile.dev
+    env_file: [".env"]
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    ports: ["3000:3000"]
+    depends_on:
+      api: { condition: service_started }
+    volumes:
+      - ./:/repo
+      - root_node_modules:/repo/node_modules
+      - web_node_modules:/repo/apps/studio-web/node_modules
+      - pnpm_store:/pnpm_store
+    working_dir: /repo
+    command: ["bash", "-lc", "pnpm -C apps/studio-web install && pnpm -C apps/studio-web dev"]
+
+volumes:
+  pnpm_store:
+  root_node_modules:
+  api_node_modules:
+  worker_node_modules:
+  web_node_modules:
