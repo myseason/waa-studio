@@ -1,5 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "jsx": "preserve", "preserveSymlinks": true },
+  "compilerOptions": {
+    "jsx": "preserve",
+    "preserveSymlinks": true,
+    "baseUrl": ".",
+    "paths": { "@waa/ui": ["../../packages/ui/src/index.ts"], "@waa/ui/*": ["../../packages/ui/src/*"] }
+  },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
